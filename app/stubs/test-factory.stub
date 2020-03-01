@@ -1,0 +1,24 @@
+<?php
+
+
+namespace Tests\Setup;
+
+//dummyUse
+
+
+class DummyClass
+{
+    //dummyFields
+
+    //dummyMethods
+
+    public function create()
+    {
+        $instance = factory(DummyClass::class)->create();
+
+
+        //dummyFactory
+
+        return $instance;
+    }
+}
