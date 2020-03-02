@@ -1,0 +1,9 @@
+    /**
+     * @param int $withDummyHasManyCount
+     * @return DummyClass
+     */
+    public function withDummyHasManys(int $withDummyHasManyCount): DummyClass
+    {
+        $this->withDummyHasManyCount = $withProjectCount;
+        return $this;
+    }

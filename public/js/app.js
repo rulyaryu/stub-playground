@@ -49729,8 +49729,8 @@ if (token) {
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(/*! D:\programms\OSPanel\domains\birdboard\resources\js\app.js */"./resources/js/app.js");
-module.exports = __webpack_require__(/*! D:\programms\OSPanel\domains\birdboard\resources\sass\app.scss */"./resources/sass/app.scss");
+__webpack_require__(/*! C:\OSPanel\domains\stub-playground\resources\js\app.js */"./resources/js/app.js");
+module.exports = __webpack_require__(/*! C:\OSPanel\domains\stub-playground\resources\sass\app.scss */"./resources/sass/app.scss");
 
 
 /***/ })

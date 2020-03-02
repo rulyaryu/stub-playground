@@ -8,16 +8,18 @@ namespace Tests\Setup;
 
 class DummyClass
 {
-    //dummyFields
+    //dummyHasManyFields
+    //dummyBelongsToFields
 
-    //dummyMethods
+    //dummyHasManyMethods
+    //dummyBelongsToMethods
 
     public function create()
     {
         $instance = factory(DummyClass::class)->create();
 
-
-        //dummyFactory
+        //dummyHasManyFactory
+        //dummyBelongsToFactory
 
         return $instance;
     }

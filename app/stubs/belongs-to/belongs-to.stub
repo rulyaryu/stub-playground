@@ -1,0 +1,1 @@
+factory(DummyBelongsTo::class)->create()->dummy-belongs-to-relation()->associate($instance);

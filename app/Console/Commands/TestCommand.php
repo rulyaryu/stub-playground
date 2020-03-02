@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class TestCommand extends Command
 {
@@ -57,33 +58,50 @@ class TestCommand extends Command
 
             $hasManyRelations = $this->ask('hasMany relation classes?');
 
-            $hasManyModels = collect(explode(',', $hasManyRelations))->filter()->mapWithKeys(function ($modelName, $key) {
-                return [$key => ['model' => $modelName, 'nameSpace' => $this->getModel($modelName)]];
-            });
+            $hasManyModels = $this->getModelsCollection($hasManyRelations);
 
-            $hasManyFactories = $this->generateHasManyFactories($hasManyModels);
-            $hasManyFields = $this->generateHasManyFields($hasManyModels);
-            $hasManyUses = $this->generateUseStatements($hasManyModels);
+//            $hasManyFactories = $this->generateHasManyFactories($hasManyModels);
+//            $hasManyFields = $this->generateHasManyFields($hasManyModels);
+//            $hasManyMethods = $this->generateHasManyMethods($hasManyModels);
+
+            $hasManyStub = $this->generateStubsByDummyString($this->hasManyStubs(), 'DummyHasMany', $hasManyModels);
+
+            $stub = str_replace('//dummyHasManyFactory', $hasManyStub->get(0), $stub);
+            $stub = str_replace('//dummyHasManyFields', $hasManyStub->get(1), $stub);
+            $stub = str_replace('//dummyHasManyMethods', $hasManyStub->get(2), $stub);
 
 
-            $stub = str_replace('//dummyFactory', $hasManyFactories, $stub);
-            $stub = str_replace('//dummyFields', $hasManyFields, $stub);
-            $stub = str_replace('//dummyUse', $hasManyUses, $stub);
+            $belongsRelations = $this->ask('belongsTo relation classes?');
 
+            $belongsToModels = $this->getModelsCollection($belongsRelations);
+
+            $belongsToStub = $this->generateStubsByDummyString($this->belongsToStubs(), 'DummyBelongsTo', $belongsToModels);
+
+            $stub = str_replace('//dummyBelongsToFactory', $belongsToStub->get(0), $stub);
+            $stub = str_replace('//dummyBelongsToFields', $belongsToStub->get(1), $stub);
+            $stub = str_replace('//dummyBelongsToMethods', $belongsToStub->get(2), $stub);
+            $stub = str_replace('dummy-belongs-to-relation', Str::lower( $this->argument('modelName')), $stub);
 
             $this->createFactories($hasManyModels);
+            $this->createFactories($belongsToModels);
 
-//            dd(__DIR__);
+
+            $hasManyUses = $this->generateUseStatements($hasManyModels);
+            $belongsToUses = $this->generateUseStatements($belongsToModels);
+
+
+            $allUses = collect([$hasManyUses, $belongsToUses])->implode("\n");
+
+            $stub = str_replace('//dummyUse', $allUses, $stub);
+
         }
 
-
+        if (File::exists($path . "\\$name.php")) {
+            $this->info('File already exists');
+            return false;
+        }
 
         File::makeDirectory($path);
-
-        //dummyFields
-        //dummyMethods
-        //dummyFactory
-        //dummyUse
 
         File::put($path . "\\$name.php", str_replace('DummyClass', $name, $stub));
 
@@ -100,16 +118,6 @@ class TestCommand extends Command
     {
         return "{$this->namespace}\\$modelName";
     }
-    // private function getModel($modelName = 'Model')
-    // {
-    //     return "{$this->namespace}\\$modelName";
-    // }
-
-
-    protected function buildClass($name)
-    {
-
-    }
 
 
     protected function getStubFile($type = 'test-factory.stub')
@@ -117,25 +125,26 @@ class TestCommand extends Command
         return File::get(app_path('stubs') . "\\$type");
     }
 
-    protected function generateHasManyFactories(Collection $hasManyModels)
+
+    protected function generateStubsByDummyString(array $stubsArr, string $dummyString, Collection $models)
     {
-        $stub = $this->getStubFile('has-many.stub');
-        return $hasManyModels->map(function ($m) use ($stub) {
-             return str_replace('DummyHasMany', $m['model'], $stub);
-        })->implode("\n \n");
+
+        return collect($stubsArr)->map(function ($stub) use ($dummyString, $models) {
+            $stub = $this->getStubFile($stub);
+
+            return $models->map(function ($m) use ($dummyString, $stub) {
+                return str_replace($dummyString, $m['model'], $stub);
+            })->implode("\n \n");
+        });
+
     }
 
-    protected function generateHasManyFields(Collection $hasManyModels)
+    protected function generateUseStatements(Collection $models)
     {
-        $stub = $this->getStubFile('has-many-field.stub');
-        return $hasManyModels->map(function ($m) use ($stub) {
-            return str_replace('DummyHasMany', $m['model'], $stub);
-        })->implode("\n \n");
-    }
-
-    protected function generateUseStatements(Collection $hasManyModels) {
-        return $hasManyModels->pluck('nameSpace')
-            ->map(function ($use) { return "use $use;";})
+        return $models->pluck('nameSpace')
+            ->map(function ($use) {
+                return "use $use;";
+            })
             ->implode("\n \n");
     }
 
@@ -147,6 +156,36 @@ class TestCommand extends Command
                 '-m' => $m['model']
             ]);
         });
+    }
+
+    /**
+     * @param $relations
+     * @return Collection
+     */
+    public function getModelsCollection($relations): Collection
+    {
+        return collect(explode(',', $relations))->filter()->mapWithKeys(function ($modelName, $key) {
+            return [$key => ['model' => $modelName, 'nameSpace' => $this->getModel($modelName)]];
+        });
+    }
+
+
+    protected function hasManyStubs()
+    {
+        return [
+            '\has-many\has-many.stub',
+            '\has-many\has-many-field.stub',
+            '\has-many\has-many-method.stub',
+        ];
+    }
+
+    protected function belongsToStubs()
+    {
+        return [
+            '\belongs-to\belongs-to.stub',
+            '\belongs-to\belongs-to-field.stub',
+            '\belongs-to\belongs-to-method.stub',
+        ];
     }
 
 

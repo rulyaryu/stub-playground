@@ -1,0 +1,5 @@
+    public function setOwnerDummyBelongsTo( DummyBelongsTo $owner): DummyClass
+    {
+        $this->ownedByDummyBelongsTo = $owner;
+        return $this;
+    }
